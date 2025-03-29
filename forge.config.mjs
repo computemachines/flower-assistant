@@ -1,27 +1,25 @@
-const path = require('path');
+import path from 'path';
 
-const { MakerSquirrel } = require('@electron-forge/maker-squirrel');
-const { MakerZIP } = require('@electron-forge/maker-zip');
-const { MakerDeb } = require('@electron-forge/maker-deb');
-const { MakerRpm } = require('@electron-forge/maker-rpm');
-const { AutoUnpackNativesPlugin } = require('@electron-forge/plugin-auto-unpack-natives');
-const { WebpackPlugin } = require('@electron-forge/plugin-webpack');
-const { FusesPlugin } = require('@electron-forge/plugin-fuses');
-const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+import { MakerSquirrel } from '@electron-forge/maker-squirrel';
+import { MakerZIP } from '@electron-forge/maker-zip';
+import { MakerDeb } from '@electron-forge/maker-deb';
+import { MakerRpm } from '@electron-forge/maker-rpm';
+import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
+import { WebpackPlugin } from '@electron-forge/plugin-webpack';
+import { FusesPlugin } from '@electron-forge/plugin-fuses';
+import { FuseV1Options, FuseVersion } from '@electron/fuses';
 
-const mainConfig = require('./webpack.main.config');
-const { rendererConfig } = require('./webpack.renderer.config');
+import mainConfig from './webpack.main.config.js';
+import { rendererConfig } from './webpack.renderer.config.js';
 
 console.log(mainConfig);
 
 const config = {
   packagerConfig: {
     asar: {
-      unpackDir: '.webpack/main/resources/'
+      unpackDir: 'resources'
     },
-    extraResource: [
-      "resources/",
-    ],
+    extraResource: ['node_modules/electron-flowno-bridge/resources/'],
   },
   rebuildConfig: {},
   makers: [
@@ -39,7 +37,7 @@ const config = {
          entryPoints: [
            {
              html: './src/index.html',
-             js: './src/renderer.ts',
+             js: './src/renderer/index.ts',
              name: 'main_window',
              preload: {
                js: './src/preload.ts',
@@ -50,7 +48,7 @@ const config = {
     }),
     new FusesPlugin({
       version: FuseVersion.V1,
-      [FuseV1Options.RunAsNode]: false,
+      [FuseV1Options.RunAsNode]: true,
       [FuseV1Options.EnableCookieEncryption]: true,
       [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
       [FuseV1Options.EnableNodeCliInspectArguments]: false,
@@ -60,4 +58,4 @@ const config = {
   ],
 };
 
-module.exports = config;
+export default config;

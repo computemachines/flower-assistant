@@ -32,7 +32,7 @@ export default class Main {
     if (Main.mainWindow && !Main.mainWindow.isDestroyed()) {
       Main.mainWindow.show();
     } else {
-      Main.mainWindow = new MainWindow();
+      Main.mainWindow = new (MainWindow as any)();
       Main.mainWindow.load();
       Main.mainWindow.on("closed", Main.onWindowAllClosed);
     }

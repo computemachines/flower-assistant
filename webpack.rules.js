@@ -18,7 +18,8 @@ export const rules = [
   },
   {
     test: /\.tsx?$/,
-    exclude: /(node_modules|\.webpack)/,
+    exclude: /node_modules/,
+    //exclude: /(node_modules|\.webpack)/,
     use: {
       loader: 'ts-loader',
       options: {
