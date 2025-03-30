@@ -5,14 +5,6 @@ interface Message {
   isUser: boolean;
 }
 
-declare global {
-  interface Window {
-    electronAPI: {
-      sendMessage: (message: string) => void;
-    };
-  }
-}
-
 export function ChatComponent() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);

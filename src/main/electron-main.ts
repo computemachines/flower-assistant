@@ -18,14 +18,8 @@ export default class Main {
   }
 
   private static async installDevTools() {
-    try {
-      await installExtension(REACT_DEVELOPER_TOOLS);
-      console.log("installed react dev tools");
-      await installExtension(REDUX_DEVTOOLS);
-      console.log("installed redux dev tools");
-    } catch (e) {
-      console.log("Unable to install dev tools", e);
-    }
+    await installExtension(REACT_DEVELOPER_TOOLS);
+    await installExtension(REDUX_DEVTOOLS);
   }
 
   private static openMainWindow() {
@@ -36,17 +30,21 @@ export default class Main {
       Main.mainWindow.load();
       Main.mainWindow.on("closed", Main.onWindowAllClosed);
     }
+
+
   }
 
   private static startPythonRunner() {
     // Determine if we're in development mode.
     const isDev = !Main.application.isPackaged;
+    console.log(
+      `[Electron Main] Starting PythonRunner in ${isDev ? "development" : "production"} mode.`,
+    );
   }
 
   private static async onReady() {
     if (process.env.NODE_ENV === "development") {
       await Main.installDevTools();
-      console.log("enable remote debugging");
       Main.application.commandLine.appendSwitch(
         "remote-debugging-port",
         "9222",

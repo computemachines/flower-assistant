@@ -17,11 +17,20 @@ export class MainWindow {
     // Add IPC handler for chat messages
     ipcMain.on('SEND_MESSAGE', (event, message) => {
       console.log('Received message from renderer:', message);
+      this.window.setBounds({
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+      });
     });
   }
 
   load() {
     this.window.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+    this.window.once('ready-to-show', () => {
+      this.window.show();
+    });
   }
 
   isDestroyed(): boolean {
