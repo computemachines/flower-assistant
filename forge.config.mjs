@@ -1,50 +1,50 @@
-import path from 'path';
+import path from "path";
 
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerRpm } from '@electron-forge/maker-rpm';
-import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
-import { WebpackPlugin } from '@electron-forge/plugin-webpack';
-import { FusesPlugin } from '@electron-forge/plugin-fuses';
-import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
+import { MakerDeb } from "@electron-forge/maker-deb";
+import { MakerRpm } from "@electron-forge/maker-rpm";
+import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
+import { WebpackPlugin } from "@electron-forge/plugin-webpack";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
-import mainConfig from './webpack.main.config.js';
-import { rendererConfig } from './webpack.renderer.config.js';
+import mainConfig from "./webpack.main.config.mjs";
+import rendererConfig from "./webpack.renderer.config.mjs";
 
 console.log(mainConfig);
 
 const config = {
   packagerConfig: {
     asar: {
-      unpackDir: 'resources'
+      unpackDir: "resources",
     },
-    extraResource: ['node_modules/electron-flowno-bridge/resources/'],
+    extraResource: ["node_modules/electron-flowno-bridge/resources/"],
   },
   rebuildConfig: {},
   makers: [
     //new MakerSquirrel({}),
     //new MakerZIP({}, ['darwin']),
     //new MakerRpm({}),
-    new MakerDeb({})
+    new MakerDeb({}),
   ],
   plugins: [
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
-        mainConfig,
-       renderer: {
-         config: rendererConfig,
-         entryPoints: [
-           {
-             html: './src/index.html',
-             js: './src/renderer/index.ts',
-             name: 'main_window',
-             preload: {
-               js: './src/preload.ts',
-             },
-           },
-         ],
-       },
+      mainConfig,
+      renderer: {
+        config: rendererConfig,
+        entryPoints: [
+          {
+            html: "./src/index.html",
+            js: rendererConfig.entry,
+            name: "main_window",
+            preload: {
+              js: "./src/renderer-preload.ts",
+            },
+          },
+        ],
+      },
     }),
     new FusesPlugin({
       version: FuseVersion.V1,

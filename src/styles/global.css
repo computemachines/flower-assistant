@@ -1,7 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
 
 *::-webkit-scrollbar {
   width: 6px;
@@ -24,3 +21,5 @@
 *::-webkit-scrollbar-thumb:active {
   background-color: rgba(0, 0, 0, 0.6);
 }
+
+@import "bootstrap-icons/font/bootstrap-icons.css";

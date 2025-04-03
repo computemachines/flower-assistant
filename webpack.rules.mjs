@@ -1,8 +1,7 @@
-
 export const rules = [
   {
     test: /native_modules[/\\].+\.node$/,
-    use: 'node-loader',
+    use: "node-loader",
   },
   {
     // test: /[/\\]node_modules[/\\].+\.(m?js|node)$/,
@@ -10,9 +9,9 @@ export const rules = [
     // test: /[/\\](node_modules[/\\].+\.(m?js|node)|node_modules[/\\].+[/\\]native[/\\]build[/\\]Release[/\\].+\.node)$/,
     parser: { amd: false },
     use: {
-      loader: '@vercel/webpack-asset-relocator-loader',
+      loader: "@vercel/webpack-asset-relocator-loader",
       options: {
-        outputAssetBase: 'native_modules',
+        outputAssetBase: "native_modules",
       },
     },
   },
@@ -21,7 +20,7 @@ export const rules = [
     exclude: /node_modules/,
     //exclude: /(node_modules|\.webpack)/,
     use: {
-      loader: 'ts-loader',
+      loader: "ts-loader",
       options: {
         transpileOnly: true,
       },
