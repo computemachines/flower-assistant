@@ -2,9 +2,10 @@ import React, { useState } from "react";
 
 interface Props {
   onSendMessage: (text: string) => void;
+  className?: string;
 }
 
-const MessageInput: React.FC<Props> = ({ onSendMessage }) => {
+const MessageInput: React.FC<Props> = ({ onSendMessage, className = "" }) => {
   const [messageText, setMessageText] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -16,16 +17,13 @@ const MessageInput: React.FC<Props> = ({ onSendMessage }) => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="group relative bottom-0 left-0 w-full p-4"
-    >
+    <form onSubmit={handleSubmit} className={`group w-full p-4 ${className}`}>
       <input
         type="text"
         value={messageText}
         onChange={(e) => setMessageText(e.target.value)}
         placeholder="Type a message..."
-        className="w-full rounded-xl border border-gray-300 bg-white p-2 pr-12 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+        className="w-full rounded-xl border border-gray-300 bg-white p-2 pr-12 shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
         autoComplete="off"
       />
       <button

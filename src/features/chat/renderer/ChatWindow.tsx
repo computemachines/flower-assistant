@@ -17,11 +17,11 @@ const ChatWindow = () => {
   return (
     <div className="flex flex-row">
       <Sidebar className="h-screen min-w-60 border-neutral-400 bg-neutral-50 shadow-xl" />
-      <div className="flex h-screen w-full flex-col">
-        <div className="flex-1 overflow-y-auto p-4">
+      <div className="relative flex h-screen w-full flex-col">
+        <div className="flex-1 overflow-y-auto p-4 pb-20">
           <MessageList messages={messages} />
         </div>
-        <div className="relative p-0">
+        <div className="absolute right-0 bottom-0 left-0 p-0">
           <MessageInput
             onSendMessage={(message) => {
               const newMessage: Message = {

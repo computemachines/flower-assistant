@@ -18,9 +18,9 @@ const MessageList: React.FC<Props> = ({
   roleToName = { user: "User", assistant: "Assistant", system: "System" },
 }) => {
   return (
-    <div className="message-list">
+    <div className="flex flex-col gap-2">
       {messages.map((msg) => (
-        <div key={msg.id} className="message">
+        <div key={msg.id} className="">
           <div
             className={clsx("font-semibold", {
               "text-right": msg.role === "user",
