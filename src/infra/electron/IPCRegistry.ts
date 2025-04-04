@@ -9,7 +9,7 @@ export class IPCRegistry {
   ) {}
 
   registerIPCHandlers(ipcMain: IpcMain) {
-    ipcMain.handle("get-something", async () => {
+    ipcMain.handle("DummyService:returnSomething", async () => {
       return this.dummyService.returnSomething();
     });
 

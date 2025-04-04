@@ -26,11 +26,20 @@ const ChatWindow = () => {
             onSendMessage={(message) => {
               const newMessage: Message = {
                 id: Date.now().toString(),
-                text: message,
-                user: "user",
+                content: message,
+                role: "user",
               };
               setMessages((prev) => [...prev, newMessage]);
-              // ipcRenderer.send(IPC_EVENTS.CHAT.SEND, newMessage);
+              window.electron.DummyService.returnSomething().then(
+                (response) => {
+                  const assistantMessage: Message = {
+                    id: Date.now().toString(),
+                    content: response,
+                    role: "assistant",
+                  };
+                  setMessages((prev) => [...prev, assistantMessage]);
+                },
+              );
             }}
           />
         </div>
