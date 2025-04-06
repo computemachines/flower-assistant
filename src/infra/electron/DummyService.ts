@@ -1,7 +1,7 @@
 /* Dependency Injection example */
 
 export interface IDummyService {
-  returnSomething(): string;
+  returnSomething(): Promise<string>;
 }
 
 export class DummyService implements IDummyService {
@@ -9,7 +9,10 @@ export class DummyService implements IDummyService {
     console.log("DummyService instance created");
   }
 
-  returnSomething(): string {
+  async returnSomething(): Promise<string> {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log("finished waiting");
+
     return "Hello from DummyService!";
   }
 }

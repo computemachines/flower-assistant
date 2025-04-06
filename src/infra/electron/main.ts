@@ -42,7 +42,7 @@ export default class Main {
   static main(browserWindow: typeof BrowserWindow) {
     Main.BrowserWindow = browserWindow;
     app.on("before-quit", () => {
-      console.log("[Electron Main] JS: Stopped Python runner");
+      // console.log("[Electron Main] JS: Stopped Python runner");
     });
     app.on("ready", async () => {
       await Main.onReady();

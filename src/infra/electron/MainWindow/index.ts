@@ -13,8 +13,8 @@ export class MainWindow {
     private flownoBridge: ElectronFlownoBridge = new ElectronFlownoBridge(),
   ) {
     this.window = new Electron.BrowserWindow({
-      width: 1200,
-      height: 800,
+      width: 600,
+      height: 400,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
