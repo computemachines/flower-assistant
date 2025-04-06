@@ -1,4 +1,5 @@
 import path from "path";
+import { execSync } from "child_process";
 
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
@@ -56,6 +57,21 @@ const config = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  hooks: {
+    postPackage: async (forgeConfig, options) => {
+      // Example: run embedded python
+      const outputDir = options.outputPaths[0];
+      const embeddedPythonPath = `${outputDir}/resources/resources/x86_64-linux/python/bin/python3`;
+
+      try {
+        execSync(`${embeddedPythonPath} --version`, { stdio: "inherit" });
+        // e.g. install your wheel:
+        // execSync(`${embeddedPythonPath} -m pip install /path/to/primary_interp-1.0.0-py3-none-any.whl`, { stdio: 'inherit' });
+      } catch (error) {
+        console.error("Error running embedded Python:", error);
+      }
+    },
+  },
 };
 
 export default config;
