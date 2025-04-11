@@ -11,7 +11,6 @@ export class DummyService implements IDummyService {
 
   async returnSomething(): Promise<string> {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("finished waiting");
 
     return "Hello from DummyService!";
   }

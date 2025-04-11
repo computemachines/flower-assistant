@@ -8,27 +8,25 @@ const ChatWindow = () => {
   const [messages, setMessages] = React.useState<Message[]>([]);
 
   React.useEffect(() => {
-    let timerId: NodeJS.Timeout;
-
-    const startAndStopElectronFlow = async () => {
-      await window.electron.ElectronFlownoBridge.start((time) => {
-        console.log(`tick: ${time}`);
-      });
+      window.electron.ElectronFlownoBridge.start();
       console.log("Electron Flow started");
 
-      timerId = setTimeout(async () => {
-        await window.electron.ElectronFlownoBridge.stop();
-        console.log("Electron Flow stopped after 10 seconds");
-      }, 10000);
-    };
+      // Register the message listener to receive messages from Python
+      const removeListener = window.electron.ElectronFlownoBridge.registerMessageListener((message) => {
+        console.log("Received message from Python:", message);
+        // Add the message to the chat
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          content: message,
+          role: "assistant",
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      });
 
-    startAndStopElectronFlow();
-
-    return () => {
-      if (timerId) {
-        clearTimeout(timerId);
-      }
-    };
+      // Cleanup function to remove the listener when the component unmounts
+      return () => {
+        removeListener();
+      };
   }, []);
 
   return (
@@ -40,18 +38,12 @@ const ChatWindow = () => {
           <MessageInput
             onSendMessage={async (message) => {
               const newMessage: Message = {
-          id: Date.now().toString(),
-          content: message,
-          role: "user",
+                id: Date.now().toString(),
+                content: message,
+                role: "user",
               };
               setMessages((prev) => [...prev, newMessage]);
-              const response = await window.electron.DummyService.returnSomething();
-              const assistantMessage: Message = {
-          id: Date.now().toString(),
-          content: response,
-          role: "assistant",
-              };
-              setMessages((prev) => [...prev, assistantMessage]);
+              await window.electron.ElectronFlownoBridge.send(message);
             }}
           />
         </div>

@@ -10,7 +10,7 @@ export class MainWindow {
 
   constructor(
     private dummyService: IDummyService,
-    private flownoBridge: ElectronFlownoBridge = new ElectronFlownoBridge(),
+    private flownoBridge: ElectronFlownoBridge,
   ) {
     this.window = new Electron.BrowserWindow({
       width: 600,
@@ -22,7 +22,7 @@ export class MainWindow {
       },
     });
 
-    this.ipcRegistry = new IPCRegistry(dummyService, flownoBridge);
+    this.ipcRegistry = new IPCRegistry(dummyService, flownoBridge, this.window);
     this.ipcRegistry.registerIPCHandlers(ipcMain);
 
     this.window.on("closed", () => {
