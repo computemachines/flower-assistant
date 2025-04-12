@@ -14,13 +14,35 @@ const ChatWindow = () => {
       // Register the message listener to receive messages from Python
       const removeListener = window.electron.ElectronFlownoBridge.registerMessageListener((message) => {
         console.log("Received message from Python:", message);
-        // Add the message to the chat
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          content: message,
-          role: "assistant",
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
+
+        setMessages((prevMessages) => {
+          const existingMessageIndex = prevMessages.findIndex(
+            (msg) => msg.id === message.response_id.toString()
+          );
+
+          if (existingMessageIndex !== -1) {
+            // Update the existing message
+            const updatedMessages = [...prevMessages];
+            updatedMessages[existingMessageIndex].content += message.content;
+
+            // If the message is final, mark it as complete
+            if (message.final) {
+              updatedMessages[existingMessageIndex].role = "assistant";
+            }
+
+            return updatedMessages;
+          } else {
+            // Add a new message if it doesn't exist
+            return [
+              ...prevMessages,
+              {
+                id: message.response_id.toString(),
+                content: message.content,
+                role: message.final ? "assistant" : "system", // Temporary role for partial messages
+              },
+            ];
+          }
+        });
       });
 
       // Cleanup function to remove the listener when the component unmounts
@@ -43,7 +65,8 @@ const ChatWindow = () => {
                 role: "user",
               };
               setMessages((prev) => [...prev, newMessage]);
-              await window.electron.ElectronFlownoBridge.send(message);
+
+              await window.electron.ElectronFlownoBridge.send(newMessage);
             }}
           />
         </div>

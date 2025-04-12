@@ -1,76 +1,93 @@
-from typing import Any, final
+from dataclasses import dataclass
+from typing import Any, Literal, final, Dict
 from flowno import FlowHDL, node, Stream, AsyncQueue, sleep
 import traceback
+import sys
 import nodejs_callback_bridge
 
 
 @node(stream_in=["response_chunks"])
-async def SendToGUI(response_chunks: Stream[str]):
+async def SendToGUI(response_chunks: Stream[str], response_id: int):
     if response_chunks:
         async for chunk in response_chunks:
-            print(f"[FlownoApp] Sending chunk to GUI: {chunk}")
-            nodejs_callback_bridge.send_message(chunk)
+            message_obj = {
+                "type": "chunk",
+                "content": chunk,
+                "response_id": response_id,
+                "final": False  # Default to False for intermediate chunks
+            }
+            nodejs_callback_bridge.send_message(message_obj)
+        
+        # Send a final message to indicate completion
+        final_message_obj = {
+            "type": "chunk",
+            "content": "",  # Empty content for final message
+            "response_id": response_id,
+            "final": True
+        }
+        nodejs_callback_bridge.send_message(final_message_obj)
+
+@dataclass
+class RendererMessage:
+    """Message object to be sent to the GUI."""
+    id: str
+    content: str
+    role: Literal["user", "assistant", "system"]
 
 @final
 class ChatApp:
     def __init__(self):
-        self.prompt_queue = AsyncQueue[str]()
+        self.prompt_queue = AsyncQueue[RendererMessage]()
+        self.f = None
+        self.instance_id = id(self)
 
     def run(self):
-
         @node
-        async def ReceiveUserInput():
-            print("[FlownoApp] Waiting for user input...")
+        async def ReceiveUserInput() -> RendererMessage:
             prompt = await self.prompt_queue.get()
-            print(f"[FlownoApp] Received user input: {prompt}")
             return prompt
 
         @node
-        async def DummyInference(prompt: str):
-            print(f"[FlownoApp] Processing prompt: {prompt}")
-            yield "thinking... "
-
-            for word in prompt.split():
+        async def DummyInference(prompt: RendererMessage):
+            print(f"Processing prompt: {prompt}")
+            content = prompt.content
+            for word in content.split():
                 # Simulate some processing time
                 await sleep(0.1)
-                yield word.capitalize()
+                yield word + " "  # Keep the whitespace after each word
+                
+            # data not used
+            raise StopAsyncIteration({
+                "status": "complete", 
+                "result": content.upper(),
+                "metadata": {
+                    "wordCount": len(content.split()),
+                    "charCount": len(content),
+                    "type": prompt.role
+                }
+            })
 
-        # There are no cycles here so this will only run once
+        # Create flow graph
         with FlowHDL() as f:
-            
             f.receive_user_input = ReceiveUserInput()
             f.dummy_inference = DummyInference(f.receive_user_input)
-            f.send_to_gui = SendToGUI(f.dummy_inference)
+            f.send_to_gui = SendToGUI(f.dummy_inference, 42)
             
         self.f = f
             
-        try:
-            self.f.run_until_complete()
-        except Exception as e:
-            print(f"Flow execution failed: {e}")
-            # Print detailed exception information
-            print(f"Exception type: {type(e).__name__}")
-            print(f"Exception details: {str(e)}")
-            print("Traceback:")
-            traceback.print_exc()
+        self.f.run_until_complete()
 
-    async def enqueue_prompt(self, prompt: str):
+    async def enqueue_prompt(self, prompt: RendererMessage):
         """Enqueue a prompt for processing."""
-        print(f"[FlownoApp] Enqueuing prompt: {prompt}")
+        print(f"Enqueueing prompt: {prompt}")
         await self.prompt_queue.put(prompt)
 
-    def handle_message(self, channel: str, message: Any):
-        """Invoked by the NodeJS callback bridge when a message is received.
-        
-        This runs in the NodeJS thread. None of the AsyncQueue async methods
-        can be called here."""
-        
-        print(f"[FlownoApp] Received message: {message}")
-        print(f"[FlownoApp] Processing message on channel: {channel}")
-        _ = self.f.create_task(
-            self.enqueue_prompt(message)
-        )
+    def handle_message(self, message: Any):
+        """Invoked by the NodeJS callback bridge when a message is received."""
+        if self.f:
+            self.f.create_task(self.enqueue_prompt(RendererMessage(**message)))
 
 
+# Create a single instance of the app
 app = ChatApp()
-nodejs_callback_bridge.register_message_listener(lambda message: app.handle_message(channel="default_channel", message=message))
+nodejs_callback_bridge.register_message_listener(app.handle_message)

@@ -16,11 +16,10 @@ contextBridge.exposeInMainWorld("electron", {
     start: () => ipcRenderer.send(IPC_ElectronFlownoBridge_start),
     waitForCompletion: () =>
       ipcRenderer.invoke(IPC_ElectronFlownoBridge_waitForCompletion),
-    send: (message: string) => ipcRenderer.invoke(IPC_ElectronFlownoBridge_send, message),
+    send: (message: any) => ipcRenderer.invoke(IPC_ElectronFlownoBridge_send, message),
 
-    registerMessageListener(callback: (message: string) => void) {
-
-      const listener = (_event: Electron.IpcRendererEvent, message: string) => {
+    registerMessageListener(callback: (message: any) => void) {
+      const listener = (_event: Electron.IpcRendererEvent, message: any) => {
         callback(message);
       };
 
@@ -46,8 +45,8 @@ declare global {
       ElectronFlownoBridge: {
         start: () => void;
         waitForCompletion: () => Promise<void>;
-        send: (message: string) => Promise<void>;
-        registerMessageListener: (callback: (message: string) => void) => () => void;
+        send: (message: any) => Promise<void>;
+        registerMessageListener: (callback: (message: any) => void) => () => void;
       };
     };
   }
