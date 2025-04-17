@@ -3,9 +3,10 @@ import React, { useState } from "react";
 interface Props {
   onSendMessage: (text: string) => void;
   className?: string;
+  ref?: React.RefObject<HTMLInputElement>;
 }
 
-const MessageInput: React.FC<Props> = ({ onSendMessage, className = "" }) => {
+const MessageInput: React.FC<Props> = ({ onSendMessage, className = "", ref }) => {
   const [messageText, setMessageText] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -25,6 +26,7 @@ const MessageInput: React.FC<Props> = ({ onSendMessage, className = "" }) => {
         placeholder="Type a message..."
         className="w-full rounded-xl border border-gray-300 bg-white p-2 pr-12 shadow-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
         autoComplete="off"
+        ref={ref}
       />
       <button
         type="submit"

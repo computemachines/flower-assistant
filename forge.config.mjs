@@ -1,4 +1,5 @@
-import path from "path";
+import { fileURLToPath } from 'url';
+import path from 'path';
 import { execSync } from "child_process";
 
 import { MakerSquirrel } from "@electron-forge/maker-squirrel";
@@ -12,6 +13,9 @@ import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 import mainConfig from "./webpack.main.config.mjs";
 import rendererConfig from "./webpack.renderer.config.mjs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 console.log(mainConfig);
 
@@ -65,8 +69,8 @@ const config = {
 
       try {
         execSync(`${embeddedPythonPath} --version`, { stdio: "inherit" });
-        // e.g. install your wheel:
-        // execSync(`${embeddedPythonPath} -m pip install /path/to/primary_interp-1.0.0-py3-none-any.whl`, { stdio: 'inherit' });
+        const whlPath = path.resolve(__dirname, "src/infra/python/primary-interp/dist/primary_interp-1.0.0-py3-none-any.whl");
+        execSync(`${embeddedPythonPath} -m pip install ${whlPath}`, { stdio: 'inherit' });
       } catch (error) {
         console.error("Error running embedded Python:", error);
       }

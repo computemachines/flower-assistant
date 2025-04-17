@@ -5,3 +5,4 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "primary-interp"
 version = "1.0.0"
+dependencies = ["logger"]

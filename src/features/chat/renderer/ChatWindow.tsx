@@ -1,54 +1,63 @@
-import React from "react";
-// import { IPC_EVENTS } from '@shared/ipc-events';
+import React, { useRef, useEffect } from "react";
 import MessageList, { Message } from "./MessageList";
 import MessageInput from "./MessageInput";
 import Sidebar from "./Sidebar";
 
 const ChatWindow = () => {
   const [messages, setMessages] = React.useState<Message[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
       window.electron.ElectronFlownoBridge.start();
-      console.log("Electron Flow started");
-
+      // Minimize logging - remove console.log statement
+      
       // Register the message listener to receive messages from Python
       const removeListener = window.electron.ElectronFlownoBridge.registerMessageListener((message) => {
-        console.log("Received message from Python:", message);
+        // Remove verbose logging of every received message
+        
+        if (message.type === "chunk") {
+          setMessages((prevMessages) => {
+            const existingMessageIndex = prevMessages.findIndex(
+              (msg) => msg.id === message.id
+            );
 
-        setMessages((prevMessages) => {
-          const existingMessageIndex = prevMessages.findIndex(
-            (msg) => msg.id === message.response_id.toString()
-          );
+            if (existingMessageIndex !== -1) {
+              // Update the existing message
+              const updatedMessages = [...prevMessages];
+              updatedMessages[existingMessageIndex].content = message.content;
 
-          if (existingMessageIndex !== -1) {
-            // Update the existing message
-            const updatedMessages = [...prevMessages];
-            updatedMessages[existingMessageIndex].content += message.content;
+              // If the message is final, mark it as complete
+              if (message.final) {
+                updatedMessages[existingMessageIndex].role = "assistant";
+              }
 
-            // If the message is final, mark it as complete
-            if (message.final) {
-              updatedMessages[existingMessageIndex].role = "assistant";
+              return updatedMessages;
+            } else {
+              // Add a new message if it doesn't exist
+              return [
+                ...prevMessages,
+                {
+                  id: message.id,
+                  content: message.content,
+                  role: message.final ? "assistant" : "system", // Temporary role for partial messages
+                },
+              ];
             }
-
-            return updatedMessages;
-          } else {
-            // Add a new message if it doesn't exist
-            return [
-              ...prevMessages,
-              {
-                id: message.response_id.toString(),
-                content: message.content,
-                role: message.final ? "assistant" : "system", // Temporary role for partial messages
-              },
-            ];
-          }
-        });
+          });
+        }
       });
 
       // Cleanup function to remove the listener when the component unmounts
       return () => {
         removeListener();
       };
+  }, []);
+
+  // Focus the input field when the component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   }, []);
 
   return (
@@ -58,15 +67,28 @@ const ChatWindow = () => {
         <MessageList messages={messages} />
         <div className="absolute right-0 bottom-0 left-0 p-0">
           <MessageInput
-            onSendMessage={async (message) => {
+            ref={inputRef}
+            onSendMessage={async (content) => {
+              const messageId = Date.now().toString();
+              
+              // Create and add user message to UI
               const newMessage: Message = {
-                id: Date.now().toString(),
-                content: message,
+                id: messageId,
+                content,
                 role: "user",
               };
               setMessages((prev) => [...prev, newMessage]);
 
-              await window.electron.ElectronFlownoBridge.send(newMessage);
+              // Send properly formatted message to Python backend
+              await window.electron.ElectronFlownoBridge.send({
+                id: messageId,
+                type: "new-prompt",
+                content: {
+                  id: messageId,
+                  role: "user",
+                  content
+                }
+              });
             }}
           />
         </div>

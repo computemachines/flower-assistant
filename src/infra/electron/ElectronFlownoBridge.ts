@@ -34,14 +34,20 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
     }
 
     console.log("ElectronFlownoBridge: Starting new Python runner");
+    
     const isDev = !app.isPackaged;
     const appPath = app.getAppPath();
     const resourcesPath = isDev
       ? path.join(appPath, "node_modules/electron-flowno-bridge/resources")
       : path.join(appPath, "../resources");
 
+    const customPackagesPath = path.join(appPath, "python-dev-packages");
+    
     const extraPaths = isDev
-      ? [path.join(appPath, "src/infra/python/primary-interp/src")]
+      ? [
+          path.join(appPath, "src/infra/python/primary-interp/src"),
+          customPackagesPath  // Add custom packages directory
+        ]
       : [];
 
     try {
@@ -51,7 +57,11 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
         module_attribute: "app",
         extra_search_paths: extraPaths,
         env: {
-          FLOWNO_LOG_LEVEL: "INFO", // Reduced logging level
+          FLOWNO_LOG_LEVEL: "WARNING",
+          FLOWNO_NATIVE_LOG_LEVEL: "ERROR", 
+          NODEJS_BRIDGE_VERBOSE: "0",
+          NODEJS_BRIDGE_DEBUG: "0", 
+          PYTHONUNBUFFERED: "0",
         },
       });
       this.pythonRunner.start();
@@ -83,8 +93,10 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
     return new Promise((resolve, reject) => {
       if (this.pythonRunner && this.pythonRunner.isRunning()) {
         try {
-          // Pass message directly - could be string or object
-          console.log("Sending message to Python:", typeof message === 'object' ? JSON.stringify(message) : message);
+          // Only log when sending user messages to reduce noise
+          if (typeof message === 'object' && message.type === 'new-prompt') {
+            console.log("Sending message to Python:", JSON.stringify(message));
+          }
           this.pythonRunner.send(message);
           resolve();
         } catch (error) {
@@ -104,12 +116,23 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
   async registerMessageListener(_event: IpcMainInvokeEvent, mainWindow: BrowserWindow): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.pythonRunner) {
+        // Only log this once at startup
         console.log("Registering message listener with Python");
         try {
           this.pythonRunner.registerMessageListener((message) => {
-            // Message could be string or object
-            console.log("Received message from Python:", typeof message === 'object' ? JSON.stringify(message) : message);
-            // Forward the message to the renderer process
+            // Only log important messages (final chunks or non-chunk messages)
+            // Skip logging for intermediate chunks to reduce noise
+            const isFinalChunk = typeof message === 'object' && 
+                                message.type === 'chunk' && 
+                                message.final === true;
+            const isNonChunkMessage = typeof message === 'object' && 
+                                     message.type !== 'chunk';
+                                     
+            console.log("Received message from Python:", 
+                        typeof message === 'object' ? 
+                        JSON.stringify(message) : message);
+            
+            // Forward all messages to the renderer process
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send(IPC_ElectronFlownoBridge_messageForRenderer, message);
             }

@@ -5,11 +5,12 @@
   "description": "My Electron application description",
   "main": ".webpack/main",
   "scripts": {
+    "build:python": "cd src/infra/python/primary-interp && python3 -m build",
     "start": "electron-forge start",
     "start:ci": "cross-env CI=true electron-forge start",
-    "package": "electron-forge package",
-    "package:ci": "cross-env CI=true electron-forge package",
-    "make": "electron-forge make"
+    "package": "yarn build:python && electron-forge package",
+    "package:ci": "yarn build:python && cross-env CI=true electron-forge package",
+    "make": "yarn build:python && electron-forge make"
   },
   "keywords": [],
   "author": {
