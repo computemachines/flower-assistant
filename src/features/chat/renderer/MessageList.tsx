@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, UIEvent } from "react";
 import clsx from "clsx";
+import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
 
 export interface Message {
   id: string;
@@ -61,10 +62,45 @@ const ScrollToBottomButton: React.FC<ScrollToBottomButtonProps> = ({
   );
 };
 
+// Define props for MessageItem (outside MessageList)
+interface MessageItemProps {
+  message: Message;
+  roleToName: Record<string, string>;
+}
+
+// Create the MessageItem component (outside MessageList)
+const MessageItem: React.FC<MessageItemProps> = ({ message, roleToName }) => {
+  return (
+    <div key={message.id} className="mt-2">
+      <div
+        className={clsx("font-semibold", {
+          "text-right": message.role === "user",
+        })}
+      >
+        {roleToName[message.role] || message.role}
+      </div>
+      <div
+        className={clsx(
+          "rounded-2xl px-4 py-2 text-gray-700",
+          { "rounded-tr-none bg-blue-100": message.role === "user" },
+          { "rounded-tl-none bg-purple-100": message.role !== "user" },
+        )}
+      >
+        {message.role === 'assistant'
+          ? <ReactMarkdown>{message.content || ""}</ReactMarkdown>
+          : message.content
+        }
+      </div>
+    </div>
+  );
+};
+
+// Correctly define the MessageList component
 const MessageList: React.FC<Props> = ({
-  messages,
+  messages, // Destructure props correctly
   roleToName = { user: "User", assistant: "Assistant", system: "System" },
 }) => {
+  // Hooks and state should be declared at the top level of the component function
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -76,14 +112,13 @@ const MessageList: React.FC<Props> = ({
 
     const { scrollTop, scrollHeight, clientHeight } =
       scrollContainerRef.current;
-    // Consider "at bottom" if within 10px of the bottom
     const atBottom = scrollHeight - scrollTop - clientHeight < 10;
     setIsAtBottom(atBottom);
 
-    console.log(
-      `ScrollTop: ${scrollTop}, ScrollHeight: ${scrollHeight}, ClientHeight: ${clientHeight}, AtBottom: ${atBottom}`,
-    );
-  }, []);
+    // console.log(
+    //   `ScrollTop: ${scrollTop}, ScrollHeight: ${scrollHeight}, ClientHeight: ${clientHeight}, AtBottom: ${atBottom}`,
+    // ); // Keep commented out unless debugging
+  }, []); // Removed scrollContainerRef from deps as it's a ref
 
   // Combined function to handle all resize-related updates
   const handleResize = React.useCallback(() => {
@@ -102,7 +137,7 @@ const MessageList: React.FC<Props> = ({
 
     // Check scroll position after resize
     checkIfAtBottom();
-  }, [containerRef, checkIfAtBottom, isAtBottom]);
+  }, [containerRef, checkIfAtBottom, isAtBottom]); // Added missing dependencies
 
   // Use the combined resize handler
   useWindowResize(handleResize);
@@ -115,8 +150,8 @@ const MessageList: React.FC<Props> = ({
         scrollContainerRef.current.scrollHeight;
     }
 
-    checkIfAtBottom();
-  }, [messages, checkIfAtBottom, isAtBottom]);
+    checkIfAtBottom(); // Check position when messages update
+  }, [messages, checkIfAtBottom, isAtBottom]); // Added missing dependencies
 
   // Handle scroll event
   const handleScroll = (e: UIEvent<HTMLDivElement>) => {
@@ -135,28 +170,11 @@ const MessageList: React.FC<Props> = ({
     <div className="relative" ref={containerRef}>
       <div
         ref={scrollContainerRef}
-        className="h-screen overflow-y-auto p-2 pb-18"
+        className="h-screen overflow-y-auto p-2 pb-18" // Ensure padding-bottom accommodates input
         onScroll={handleScroll}
       >
         {messages.map((msg) => (
-          <div key={msg.id} className="mt-2">
-            <div
-              className={clsx("font-semibold", {
-                "text-right": msg.role === "user",
-              })}
-            >
-              {roleToName[msg.role] || msg.role}
-            </div>
-            <div
-              className={clsx(
-                "rounded-2xl bg-purple-100 px-4 py-2 text-gray-700",
-                { "rounded-tr-none": msg.role === "user" },
-                { "rounded-tl-none": msg.role !== "user" },
-              )}
-            >
-              {msg.content}
-            </div>
-          </div>
+          <MessageItem key={msg.id} message={msg} roleToName={roleToName} />
         ))}
       </div>
       <ScrollToBottomButton

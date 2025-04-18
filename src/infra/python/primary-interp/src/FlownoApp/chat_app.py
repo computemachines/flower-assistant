@@ -41,13 +41,15 @@ class MessageJSONEncoder(JSONEncoder):
         if isinstance(o, Message):
             # TODO: Examine if the `id` field is a problem for the API
             return {"role": o.role, "content": o.content}
+        # Add logging for unexpected types
+        logger.error(f"MessageJSONEncoder encountered unexpected type: {type(o).__name__} - Object: {o!r}")
         return super().default(o)
 
 
 @dataclass
 class NewResponseMessage(RendererMessageBase):
     type: Literal["new-response"]
-    content: Message
+    response: Message
 
 
 @dataclass
@@ -56,20 +58,22 @@ class ChunkedResponse:
     id: str
     response_id: str
     content: str
-    final: bool
+    finish_reason: str | None = None
 
 
 # JSON encoder for the nodejs callback bridge.
 class NodeJSMessageJSONEncoder(JSONEncoder):
     def default(self, o: Any):
         if isinstance(o, ChunkedResponse):
-            return {
+            result = {
                 "type": o.type,
                 "id": o.id,
                 "response_id": o.response_id,
                 "content": o.content,
-                "final": o.final,
             }
+            if o.finish_reason is not None:
+                result["finish_reason"] = o.finish_reason
+            return result
         elif isinstance(o, Message):
             return {
                 "id": o.id,
@@ -79,7 +83,7 @@ class NodeJSMessageJSONEncoder(JSONEncoder):
         elif isinstance(o, NewResponseMessage):
             return {
                 "type": o.type,
-                "content": o.content,
+                "response": o.response,
             }
 
         return super().default(o)
@@ -131,7 +135,7 @@ def create_blank_response():
     new_response_id = new_id("response")
     message = NewResponseMessage(
         type="new-response",
-        content=Message(
+        response=Message(
             id=new_response_id,
             role="assistant",
             content="",
@@ -161,6 +165,10 @@ async def GUIChat(
     prompt = await prompt_queue.get()
     return prompt
 
+@node(stream_in=["chunks"])
+async def ChunkContents(chunks: Stream[ChunkedResponse]):
+    async for chunk in chunks:
+        yield chunk.content
 
 @node
 async def LatestMessage(
@@ -183,6 +191,10 @@ class ChatHistory:
     messages: Messages = [Message("system-0", "system", "You are a helpful assistant.")]
 
     async def call(self, new_prompt: Message, last_response: str = "") -> Messages:
+        if type(last_response) is not str:
+            raise TypeError(
+                f"Expected last_response to be a string, got {type(last_response).__name__}"
+            )
         if last_response:
             last_message = self.messages[-1]
             self.messages.append(
@@ -198,11 +210,20 @@ async def Inference(messages: Messages):
     """
     Streams the LLM API response.
     """
-    last_message = messages[-1]
+    # Log the types of messages received by Inference
+    message_types = [type(msg).__name__ for msg in messages]
+    logger.warning(f"Inference node received messages with types: {message_types}")
+    
+    # Filter out any non-Message objects before sending to the API
+    api_messages = [msg for msg in messages if isinstance(msg, Message)]
+    # Log if filtering removed any messages (indicating unexpected types were present)
+    if len(api_messages) != len(messages):
+        logger.warning(f"Filtered messages for API. Original count: {len(messages)}, Filtered count: {len(api_messages)}")
+
     response = await client.stream_post(
         API_URL,
         json={
-            "messages": messages,
+            "messages": api_messages,
             "model": "llama-3.3-70b-versatile",
             "stream": True,
         },
@@ -222,15 +243,13 @@ async def Inference(messages: Messages):
             # Extract the content chunk
             chunk: str = choice["delta"]["content"]
 
-            final_chunk = True if "finish_reason" in choice else False
-
             # Create a ChunkedResponse object to yield
             chunk_response = ChunkedResponse(
                 type="chunk",
                 id=new_id("chunk"),
                 response_id=new_response_id,
                 content=chunk,
-                final=final_chunk,
+                finish_reason=choice.get("finish_reason")
             )
 
             yield chunk_response
@@ -255,8 +274,8 @@ class ChatApp:
         with FlowHDL() as f:
             f.gui_chat = GUIChat(self.prompt_queue, f.inference)
             f.inference = Inference(f.history)
-            f.history = ChatHistory(f.gui_chat, f.inference)
-            f.latest_message = LatestMessage(f.history)
+            f.chunk_contents = ChunkContents(f.inference)
+            f.history = ChatHistory(f.gui_chat, f.chunk_contents)
 
         self.f = f
         nodejs_callback_bridge.register_message_listener(

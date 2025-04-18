@@ -64,6 +64,7 @@
     "@tailwindcss/postcss": "^4.0.17",
     "bootstrap-icons": "^1.11.3",
     "electron-squirrel-startup": "^1.0.1",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "react-markdown": "^10.1.0"
   }
 }
