@@ -53,7 +53,7 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
     try {
       this.pythonRunner = new PythonRunner({
         resource_path: resourcesPath,
-        module: "FlownoApp.chat_app",
+        module: "FlownoApp",  // Changed from FlownoApp.chat_app to just FlownoApp
         module_attribute: "app",
         extra_search_paths: extraPaths,
         env: {
