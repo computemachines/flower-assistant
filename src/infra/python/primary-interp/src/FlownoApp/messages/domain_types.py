@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Literal
+from typing import Literal
 
 @dataclass
 class Message:
@@ -9,11 +9,17 @@ class Message:
     content: str
 
 # Alias for a list of Message objects
-Messages = List[Message]
+Messages = list[Message]
 
 @dataclass
 class ChatSession:
-    """Represents a single conversation thread."""
+    """
+    Represents a complete conversation with all its history and metadata.
+    
+    This is the comprehensive archive of a conversation that gets serialized when 
+    saving chats to disk. It will eventually support branching conversation trees,
+    metadata, and other rich features beyond what the simple ChatHistory node maintains.
+    """
     id: str
     name: str
     messages: Messages = field(default_factory=list)
@@ -43,5 +49,5 @@ class ApiConfig:
 class AppState:
     """A container for the main application state."""
     current_chat_id: str | None = None
-    active_sessions: Dict[str, ChatSession] = field(default_factory=dict)
+    active_sessions: dict[str, ChatSession] = field(default_factory=dict)
     api_config: ApiConfig = field(default_factory=ApiConfig)

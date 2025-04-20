@@ -2,7 +2,6 @@
 Context object for IPC message handlers.
 """
 from dataclasses import dataclass
-from typing import Dict, Any
 
 from flowno import FlowHDL, AsyncQueue
 from ..messages.domain_types import Message, AppState

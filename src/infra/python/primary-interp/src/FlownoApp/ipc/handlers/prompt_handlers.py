@@ -2,7 +2,7 @@
 Handlers for prompt-related IPC messages.
 """
 import logging
-from typing import Dict, Any
+from typing import Any
 import time
 
 from ...messages.domain_types import Message
@@ -10,7 +10,7 @@ from ..context import AppContext  # Import from context.py instead of handler.py
 
 logger = logging.getLogger(__name__)
 
-async def handle_new_prompt(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_new_prompt(message: dict[str, object], context: AppContext) -> None:
     """
     Handle 'new-prompt' messages from the frontend.
     
@@ -27,6 +27,9 @@ async def handle_new_prompt(message: Dict[str, Any], context: AppContext) -> Non
             raise ValueError("Invalid new-prompt message format: missing 'content'")
             
         content = message["content"]
+        if not isinstance(content, dict):
+            logger.error(f"Invalid content type in new-prompt: {type(content)}")
+            raise ValueError("Prompt content must be a dictionary")
         msg_id = content.get("id")
         msg_role = content.get("role")
         msg_content = content.get("content")

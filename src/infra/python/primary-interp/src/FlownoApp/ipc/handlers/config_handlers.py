@@ -2,7 +2,6 @@
 Handlers for configuration-related IPC messages.
 """
 import logging
-from typing import Dict, Any
 import nodejs_callback_bridge
 
 from ...messages.domain_types import ApiConfig
@@ -11,7 +10,7 @@ from ..context import AppContext  # Import from context.py instead of handler.py
 
 logger = logging.getLogger(__name__)
 
-async def handle_get_api_config(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_get_api_config(message: dict[str, object], context: AppContext) -> None:
     """
     Handle 'get-api-config' messages from the frontend.
     
@@ -45,7 +44,7 @@ async def handle_get_api_config(message: Dict[str, Any], context: AppContext) ->
         logger.error(f"Error handling get-api-config: {e}")
         raise
 
-async def handle_set_api_config(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_set_api_config(message: dict[str, object], context: AppContext) -> None:
     """
     Handle 'set-api-config' messages from the frontend.
     
@@ -61,6 +60,8 @@ async def handle_set_api_config(message: Dict[str, Any], context: AppContext) ->
             raise ValueError("Missing 'payload' in set-api-config message")
             
         payload = message["payload"]
+        if not isinstance(payload, dict):
+            raise ValueError("Payload must be a dictionary")
         
         # Update only the fields that are provided
         if payload.get("url") is not None:

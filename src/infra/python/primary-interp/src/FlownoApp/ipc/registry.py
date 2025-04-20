@@ -1,7 +1,8 @@
 """
 IPC message registry for handling messages from the frontend.
 """
-from typing import Dict, Callable, Awaitable, Any
+from collections.abc import Awaitable
+from typing import Callable, Any
 
 from ..messages.domain_types import Message, AppState
 from ..messages.ipc_schema import NewPromptMessage, EditMessageRequest, DeleteMessageRequest
@@ -20,10 +21,10 @@ from ..ipc.handlers.config_handlers import (
 )
 
 # Define the type for handler functions
-MessageHandlerType = Callable[[Dict[str, Any], 'AppContext'], Awaitable[None]]
+MessageHandlerType = Callable[[dict[str, Any], 'AppContext'], Awaitable[None]]
 
 # Registry mapping message types to their handler functions
-MESSAGE_HANDLERS: Dict[str, MessageHandlerType] = {
+MESSAGE_HANDLERS: dict[str, MessageHandlerType] = {
     # Prompt handling
     "new-prompt": handle_new_prompt,
     

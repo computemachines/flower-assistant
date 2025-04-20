@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Dict, List, Literal, Optional, Any
+from typing import Any, Literal
 
 from ..messages.domain_types import Message
+
+## TODO: Think about Command-Query separation
 
 # -----------------------------------------------------------------
 # Base IPC Message Structure
@@ -10,7 +12,7 @@ from ..messages.domain_types import Message
 @dataclass
 class IPCMessageBase:
     """Base class for all IPC messages."""
-    type: str
+    type: Any  # Literal[] does not subtype correctly.
 
 # -----------------------------------------------------------------
 # Frontend -> Python Messages (Commands & Queries)
@@ -19,7 +21,7 @@ class IPCMessageBase:
 @dataclass
 class NewPromptPayload:
     id: str
-    role: Literal["user"]
+    role: Literal["user", "system"]
     content: str
 
 @dataclass
@@ -58,15 +60,15 @@ class LoadChatRequest(IPCMessageBase):
 @dataclass
 class CreateNewChatRequest(IPCMessageBase):
     type: Literal["create-new-chat"]
-    payload: Dict = None  # Empty payload
+    payload: None = None  # Empty payload
 
 @dataclass
 class ApiConfigPayload:
-    url: Optional[str] = None
-    token: Optional[str] = None
-    model: Optional[str] = None
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
+    url: str | None = None
+    token: str | None = None
+    model: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
 
 @dataclass
 class SetApiConfigRequest(IPCMessageBase):
@@ -76,17 +78,17 @@ class SetApiConfigRequest(IPCMessageBase):
 @dataclass
 class StopGenerationRequest(IPCMessageBase):
     type: Literal["stop-generation"]
-    payload: Dict = None  # Empty payload
+    payload: None = None  # Empty payload
 
 @dataclass
 class GetChatListRequest(IPCMessageBase):
     type: Literal["get-chat-list"]
-    payload: Dict = None  # Empty payload
+    payload: None = None  # Empty payload
 
 @dataclass
 class GetApiConfigRequest(IPCMessageBase):
     type: Literal["get-api-config"]
-    payload: Dict = None  # Empty payload
+    payload: None = None  # Empty payload
 
 # -----------------------------------------------------------------
 # Python -> Frontend Messages (Responses & Events)
@@ -100,7 +102,7 @@ class ChatSummary:
 
 @dataclass
 class ChatListPayload:
-    chats: List[ChatSummary]
+    chats: list[ChatSummary]
 
 @dataclass
 class ChatListResponse(IPCMessageBase):
@@ -110,7 +112,7 @@ class ChatListResponse(IPCMessageBase):
 @dataclass
 class ChatLoadedPayload:
     chatId: str
-    messages: List[Message]
+    messages: list[Message]
 
 @dataclass
 class ChatLoadedResponse(IPCMessageBase):
@@ -134,7 +136,7 @@ class MessageDeletedResponse(IPCMessageBase):
 @dataclass
 class GenerationStoppedResponse(IPCMessageBase):
     type: Literal["generation-stopped"]
-    payload: Dict = None  # Empty payload
+    payload: None = None  # Empty payload
 
 @dataclass
 class MessageUpdatedPayload:
@@ -149,7 +151,7 @@ class MessageUpdatedResponse(IPCMessageBase):
 class AckPayload:
     originalMessageType: str
     success: bool
-    message: Optional[str] = None
+    message: str | None = None
 
 @dataclass
 class AckResponse(IPCMessageBase):
@@ -159,7 +161,7 @@ class AckResponse(IPCMessageBase):
 @dataclass
 class ErrorPayload:
     message: str
-    originalMessageType: Optional[str] = None
+    originalMessageType: str | None = None  # Optional field for the original message type
 
 @dataclass
 class ErrorResponse(IPCMessageBase):
@@ -187,4 +189,4 @@ class ChunkedResponse(IPCMessageBase):
     id: str
     response_id: str
     content: str
-    finish_reason: Optional[str] = None
+    finish_reason: str | None = None  # Optional finish reason

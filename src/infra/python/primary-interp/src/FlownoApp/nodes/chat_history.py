@@ -12,6 +12,10 @@ class ChatHistory:
     
     This stateful node stores the history of messages and handles adding
     new user prompts and assistant responses to the history.
+
+    This is a very simple way to get a linear history of messages. In
+    the future, I'm going to replace this with something that extracts
+    the relevant context and messages from the ChatSession object.
     """
     # Initialize with a system message
     messages: Messages = [Message("system-0", "system", "You are a helpful assistant.")]

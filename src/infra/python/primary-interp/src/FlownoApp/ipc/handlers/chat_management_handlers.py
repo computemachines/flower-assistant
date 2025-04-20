@@ -2,14 +2,14 @@
 Handlers for chat management IPC messages.
 """
 import logging
-from typing import Dict, Any
+from typing import Any
 
 from ...messages.domain_types import Message, ChatSession
 from ..context import AppContext  # Import from context.py instead of handler.py
 
 logger = logging.getLogger(__name__)
 
-async def handle_load_chat(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_load_chat(message: dict[str, Any], context: AppContext) -> None:
     """
     Handle 'load-chat' messages from the frontend.
     
@@ -25,7 +25,7 @@ async def handle_load_chat(message: Dict[str, Any], context: AppContext) -> None
     # 3. Make it the current chat
     # 4. Send chat-loaded message back to frontend
 
-async def handle_create_new_chat(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_create_new_chat(message: dict[str, Any], context: AppContext) -> None:
     """
     Handle 'create-new-chat' messages from the frontend.
     
@@ -42,7 +42,7 @@ async def handle_create_new_chat(message: Dict[str, Any], context: AppContext) -
     # 4. Make it the current chat
     # 5. Send chat-loaded message back to frontend
 
-async def handle_delete_message(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_delete_message(message: dict[str, Any], context: AppContext) -> None:
     """
     Handle 'delete-message' messages from the frontend.
     
@@ -57,7 +57,7 @@ async def handle_delete_message(message: Dict[str, Any], context: AppContext) ->
     # 2. Find and remove the message from current chat
     # 3. Send message-deleted confirmation to frontend
 
-async def handle_edit_message(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_edit_message(message: dict[str, Any], context: AppContext) -> None:
     """
     Handle 'edit-message' messages from the frontend.
     

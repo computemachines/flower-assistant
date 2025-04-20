@@ -14,7 +14,8 @@ async def GUIChat(
 ):
     """
     Sends streaming responses to the GUI via the NodeJS callback bridge,
-    then waits for a new prompt from the prompt queue.
+    then waits for a new prompt from the prompt queue. The prompt queue
+    is populated by the bridge message handler when a new prompt is received.
     
     Args:
         prompt_queue: Queue to receive new prompts from the frontend

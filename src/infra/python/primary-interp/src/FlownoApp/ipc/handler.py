@@ -2,7 +2,7 @@
 Central IPC message handler that uses the registry to dispatch messages.
 """
 import logging
-from typing import Dict, Any
+from typing import Any
 
 from .context import AppContext
 from .registry import MESSAGE_HANDLERS
@@ -10,7 +10,7 @@ from ..messages.ipc_schema import ErrorResponse, ErrorPayload
 
 logger = logging.getLogger(__name__)
 
-async def handle_message(message: Dict[str, Any], context: AppContext) -> None:
+async def handle_message(message: dict[str, object], context: AppContext) -> None:
     """
     Central handler for all IPC messages from the frontend.
     

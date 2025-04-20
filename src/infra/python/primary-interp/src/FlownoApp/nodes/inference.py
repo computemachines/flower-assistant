@@ -78,19 +78,7 @@ async def Inference(messages: Messages, api_config: ApiConfig = None) -> AsyncGe
     # Set the API token in headers if provided
     if api_config and api_config.token:
         headers.set("Authorization", f"Bearer {api_config.token}")
-    
-    # Log the types of messages received
-    message_types = [type(msg).__name__ for msg in messages]
-    logger.info(f"Inference node received {len(messages)} messages with types: {message_types}")
-    
-    # Filter out any non-Message objects before sending to the API
-    api_messages = [msg for msg in messages if isinstance(msg, Message)]
-    
-    # Log if filtering removed any messages
-    if len(api_messages) != len(messages):
-        logger.warning(f"Filtered messages for API. Original count: {len(messages)}, Filtered count: {len(api_messages)}")
-
-    # Create a blank response placeholder for the frontend first
+        # Create a blank response placeholder for the frontend first
     new_response_id = create_blank_response()
     logger.info(f"Created blank response with ID: {new_response_id}")
 
@@ -99,7 +87,7 @@ async def Inference(messages: Messages, api_config: ApiConfig = None) -> AsyncGe
         response = await client.stream_post(
             api_url,
             json={
-                "messages": api_messages,
+                "messages": messages,
                 "model": api_model,
                 "stream": True,
                 # Add additional parameters if provided in api_config
@@ -111,15 +99,10 @@ async def Inference(messages: Messages, api_config: ApiConfig = None) -> AsyncGe
         # Check if the response is valid
         if not streaming_response_is_ok(response):
             logger.error(f"API response error: {response.status}")
-            error_message = f"Error communicating with API: {response.status}"
+            error_message = response.body
             
-            try:
-                # Try to read error details if available
-                error_body = await response.body.read_text()
-                error_message += f"\n\nDetails: {error_body}"
-            except Exception as read_err:
-                logger.error(f"Failed to read error response body: {read_err}")
-            
+            ## TODO: Send a more user-friendly error message to the frontend
+
             # Yield an error chunk
             yield ChunkedResponse(
                 type="chunk",
@@ -171,6 +154,7 @@ async def Inference(messages: Messages, api_config: ApiConfig = None) -> AsyncGe
     except Exception as e:
         # Handle any other exceptions
         logger.error(f"General Exception during API call: {e}")
+        ## TODO: Send a more user-friendly error message to the frontend
         yield ChunkedResponse(
             type="chunk",
             id=new_id("error-chunk"),

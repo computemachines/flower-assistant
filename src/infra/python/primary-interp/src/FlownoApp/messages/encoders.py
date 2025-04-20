@@ -2,6 +2,7 @@
 from json import JSONEncoder
 import logging
 from typing import Any
+from typing_extensions import override
 
 from ..messages.domain_types import Message
 from ..messages.ipc_schema import ChunkedResponse, NewResponseMessage
@@ -9,7 +10,8 @@ from ..messages.ipc_schema import ChunkedResponse, NewResponseMessage
 logger = logging.getLogger(__name__)
 
 class MessageJSONEncoder(JSONEncoder):
-    """JSON encoder for messages sent to the API."""
+    """JSON encoder for chat messages sent to the inference API."""
+    @override
     def default(self, o: Any):
         if isinstance(o, Message):
             # Only include role and content for API compatibility
@@ -18,9 +20,11 @@ class MessageJSONEncoder(JSONEncoder):
         logger.error(f"MessageJSONEncoder encountered unexpected type: {type(o).__name__} - Object: {o!r}")
         return super().default(o)
 
+## TODO: Add decoders and add a set_json_decoder method to the NodeJS bridge
 
 class NodeJSMessageJSONEncoder(JSONEncoder):
     """JSON encoder for messages sent to the frontend via the NodeJS bridge."""
+    @override
     def default(self, o: Any):
         if isinstance(o, ChunkedResponse):
             result = {
