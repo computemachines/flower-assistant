@@ -5,7 +5,8 @@ import {
   IPC_ElectronFlownoBridge_start,
   IPC_ElectronFlownoBridge_waitForCompletion,
   IPC_ElectronFlownoBridge_registerMessageListener,
-  IPC_ElectronFlownoBridge_messageForRenderer
+  IPC_ElectronFlownoBridge_messageForRenderer,
+  IPC_ElectronFlownoBridge_isRunning
 } from "@infra/IPCChannels";
 
 contextBridge.exposeInMainWorld("electron", {
@@ -17,6 +18,7 @@ contextBridge.exposeInMainWorld("electron", {
     waitForCompletion: () =>
       ipcRenderer.invoke(IPC_ElectronFlownoBridge_waitForCompletion),
     send: (message: any) => ipcRenderer.invoke(IPC_ElectronFlownoBridge_send, message),
+    isRunning: () => ipcRenderer.invoke(IPC_ElectronFlownoBridge_isRunning),
 
     registerMessageListener(callback: (message: any) => void) {
       const listener = (_event: Electron.IpcRendererEvent, message: any) => {
@@ -46,6 +48,7 @@ declare global {
         start: () => void;
         waitForCompletion: () => Promise<void>;
         send: (message: any) => Promise<void>;
+        isRunning: () => Promise<boolean>;
         registerMessageListener: (callback: (message: any) => void) => () => void;
       };
     };

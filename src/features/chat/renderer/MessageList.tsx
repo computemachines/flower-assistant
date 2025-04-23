@@ -1,16 +1,35 @@
 import React, { useRef, useEffect, useState, UIEvent } from "react";
 import clsx from "clsx";
-import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
+import ReactMarkdown from "react-markdown"; // Import ReactMarkdown
+import rehypeRaw from 'rehype-raw';
 
-export interface Message {
+export interface CompleteMessage {
+  kind: "complete-message";
   id: string;
   content: string;
   role: "user" | "assistant" | "system";
 }
 
+export interface ChunkedMessage {
+  kind: "chunked-message";
+  id: string;
+  contents: MessageChunk[];
+  role: "user" | "assistant";
+  isComplete: boolean;
+}
+export interface MessageChunk {
+  id: string;
+  content: string;
+  finish_reason: string | null;
+}
+
+export type Message = CompleteMessage | ChunkedMessage;
+
 interface Props {
   messages: Message[];
   roleToName?: Record<string, string>;
+  messageIdStreamingAudio?: string; // The id of the message that is currently being played by the TTS
+  sentenceIds?: string[]; // The list of chunk ids that are part of the sentence being played by the TTS
 }
 
 interface ScrollToBottomButtonProps {
@@ -66,10 +85,27 @@ const ScrollToBottomButton: React.FC<ScrollToBottomButtonProps> = ({
 interface MessageItemProps {
   message: Message;
   roleToName: Record<string, string>;
+  sentenceIds?: string[]; // The list of chunk ids that are part of the sentence being played by the TTS
 }
 
 // Create the MessageItem component (outside MessageList)
-const MessageItem: React.FC<MessageItemProps> = ({ message, roleToName }) => {
+const MessageItem: React.FC<MessageItemProps> = ({ message, roleToName, sentenceIds = [] }) => {
+  let content = '';
+  if (message.kind === 'chunked-message' && Array.isArray(message.contents)) {
+    // Build markdown string with HTML spans for highlighted chunks
+    content = message.contents.map(chunk => {
+      const text = typeof chunk.content === 'string' ? chunk.content : String(chunk.content || '');
+      if (sentenceIds.includes(chunk.id)) {
+        return `<span class=\"bg-yellow-200\">${text}</span>`;
+      }
+      return text;
+    }).join('');
+  } else if (message.kind === 'complete-message') {
+    content = typeof message.content === 'string'
+      ? message.content
+      : JSON.stringify(message.content || '');
+  }
+
   return (
     <div key={message.id} className="mt-2">
       <div
@@ -86,10 +122,15 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, roleToName }) => {
           { "rounded-tl-none bg-purple-100": message.role !== "user" },
         )}
       >
-        {message.role === 'assistant'
-          ? <ReactMarkdown>{message.content || ""}</ReactMarkdown>
-          : message.content
-        }
+        {message.role === 'assistant' ? (
+          message.kind === 'chunked-message' ? (
+            <ReactMarkdown rehypePlugins={[rehypeRaw]}>{content}</ReactMarkdown>
+          ) : (
+            <ReactMarkdown>{content}</ReactMarkdown>
+          )
+        ) : (
+          content
+        )}
       </div>
     </div>
   );
@@ -99,6 +140,8 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, roleToName }) => {
 const MessageList: React.FC<Props> = ({
   messages, // Destructure props correctly
   roleToName = { user: "User", assistant: "Assistant", system: "System" },
+  messageIdStreamingAudio = "",
+  sentenceIds = [],
 }) => {
   // Hooks and state should be declared at the top level of the component function
   const containerRef = useRef<HTMLDivElement>(null);
@@ -173,9 +216,13 @@ const MessageList: React.FC<Props> = ({
         className="h-screen overflow-y-auto p-2 pb-18" // Ensure padding-bottom accommodates input
         onScroll={handleScroll}
       >
-        {messages.map((msg) => (
-          <MessageItem key={msg.id} message={msg} roleToName={roleToName} />
-        ))}
+        {messages.map((msg) => {
+          const audioProps = (msg.id === messageIdStreamingAudio)
+            ? {sentenceIds} : {};
+          return (
+            <MessageItem key={msg.id} message={msg} roleToName={roleToName} {...audioProps} />
+          );
+        })}
       </div>
       <ScrollToBottomButton
         isVisible={!isAtBottom}

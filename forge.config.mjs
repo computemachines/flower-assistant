@@ -65,12 +65,22 @@ const config = {
     postPackage: async (forgeConfig, options) => {
       // Example: run embedded python
       const outputDir = options.outputPaths[0];
-      const embeddedPythonPath = `${outputDir}/resources/resources/x86_64-linux/python/bin/python3`;
+      const embeddedPythonPath = `${outputDir}/resources/resources/x86_64-linux/python/bin/python3.12`;
 
       try {
+        // Check Python version
         execSync(`${embeddedPythonPath} --version`, { stdio: "inherit" });
+        
+        // Install primary_interp
+        console.log("Installing primary_interp...");
         const whlPath = path.resolve(__dirname, "src/infra/python/primary-interp/dist/primary_interp-1.0.0-py3-none-any.whl");
         execSync(`${embeddedPythonPath} -m pip install ${whlPath}`, { stdio: 'inherit' });
+        
+        // Download spaCy model
+        console.log("Downloading spaCy English language model...");
+        execSync(`${embeddedPythonPath} -m spacy download en_core_web_sm`, { stdio: 'inherit' });
+        
+        console.log("Python setup completed successfully");
       } catch (error) {
         console.error("Error running embedded Python:", error);
       }

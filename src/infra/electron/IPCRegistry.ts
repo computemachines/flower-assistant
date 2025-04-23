@@ -7,6 +7,7 @@ import {
   IPC_ElectronFlownoBridge_start,
   IPC_ElectronFlownoBridge_waitForCompletion,
   IPC_ElectronFlownoBridge_registerMessageListener,
+  IPC_ElectronFlownoBridge_isRunning
 } from "@infra/IPCChannels";
 
 export class IPCRegistry {
@@ -32,6 +33,10 @@ export class IPCRegistry {
       IPC_ElectronFlownoBridge_registerMessageListener,
       (event) => this.flownoBridge.registerMessageListener(event, this.mainWindow)
     );
+    ipcMain.handle(
+      IPC_ElectronFlownoBridge_isRunning,
+      this.flownoBridge.isRunning.bind(this.flownoBridge)
+    );
   }
 
   unregisterIPCHandlers(ipcMain: IpcMain) {
@@ -40,5 +45,6 @@ export class IPCRegistry {
     ipcMain.removeHandler(IPC_DummyService_returnSomething);
     ipcMain.removeHandler(IPC_ElectronFlownoBridge_send);
     ipcMain.removeHandler(IPC_ElectronFlownoBridge_registerMessageListener);
+    ipcMain.removeHandler(IPC_ElectronFlownoBridge_isRunning);
   }
 }

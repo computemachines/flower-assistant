@@ -4,6 +4,7 @@ export const IPC_ElectronFlownoBridge_waitForCompletion = "ElectronFlownoBridge_
 export const IPC_ElectronFlownoBridge_send = "ElectronFlownoBridge_send";
 export const IPC_ElectronFlownoBridge_registerMessageListener = "ElectronFlownoBridge_registerMessageListener";
 export const IPC_ElectronFlownoBridge_messageForRenderer = "ElectronFlownoBridge_messageForRenderer";
+export const IPC_ElectronFlownoBridge_isRunning = "ElectronFlownoBridge_isRunning";
 
 // DummyService
 export const IPC_DummyService_returnSomething = "DummyService_returnSomething";

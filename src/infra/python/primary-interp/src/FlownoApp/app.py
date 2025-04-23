@@ -9,13 +9,14 @@ from typing import Dict, Callable, Coroutine, Any, TypeVar, final
 from typing_extensions import TypeVarTuple, Unpack
 
 from flowno import FlowHDL, AsyncQueue, node
+from FlownoApp.nodes.sentencizer import ChunkSentences
 import nodejs_callback_bridge
 
 from .messages.domain_types import Message, AppState, ApiConfig
 from .messages.encoders import NodeJSMessageJSONEncoder
 from .ipc.handler import handle_message
 from .ipc.context import AppContext
-from .nodes.gui_io import GUIChat
+from .nodes.gui_io import GUIChat, SentenceSpeaker
 from .nodes.chat_history import ChatHistory
 from .nodes.inference import Inference, ChunkContents
 
@@ -85,6 +86,10 @@ class ChatApp:
             # ChatHistory receives prompts and accumulated response content
             f.history = ChatHistory(f.gui_chat, f.chunk_contents)
 
+            f.sentences = ChunkSentences(f.inference)
+            f.tts = SentenceSpeaker(f.sentences)
+            f.tts.start_speak_task(f)
+
         # Store the flow graph
         self.f = f
         
@@ -109,7 +114,7 @@ class ChatApp:
         logger.info("Starting Flowno graph")
         self.f.run_until_complete()
 
-    async def handle_message(self, message: Dict):
+    async def handle_message(self, message: dict[str, object]):
         """
         Delegate message handling to the central handler.
         

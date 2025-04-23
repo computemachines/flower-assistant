@@ -106,4 +106,4 @@ dist/
 __pycache__/
 *.egg-info/
 
-/python-dev-packages/
+/python-dev-venv-embedded/

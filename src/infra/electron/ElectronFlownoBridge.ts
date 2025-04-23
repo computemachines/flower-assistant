@@ -8,6 +8,7 @@ export interface IElectronFlownoBridge {
   waitForCompletion(event: IpcMainEvent): Promise<void>;
   send(event: IpcMainEvent, message: any): Promise<void>; // Accept any JSON-serializable object
   registerMessageListener(event: IpcMainInvokeEvent, mainWindow: BrowserWindow): Promise<void>;
+  isRunning(event: IpcMainInvokeEvent): Promise<boolean>;
 }
 
 export class ElectronFlownoBridge implements IElectronFlownoBridge {
@@ -53,12 +54,12 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
     try {
       this.pythonRunner = new PythonRunner({
         resource_path: resourcesPath,
-        module: "FlownoApp",  // Changed from FlownoApp.chat_app to just FlownoApp
+        module: "FlownoApp",
         module_attribute: "app",
         extra_search_paths: extraPaths,
         env: {
           FLOWNO_LOG_LEVEL: "WARNING",
-          FLOWNO_NATIVE_LOG_LEVEL: "ERROR", 
+          FLOWNO_NATIVE_LOG_LEVEL: "WARNING", 
           NODEJS_BRIDGE_VERBOSE: "0",
           NODEJS_BRIDGE_DEBUG: "0", 
           PYTHONUNBUFFERED: "0",
@@ -109,6 +110,20 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
         reject(new Error(error));
       }
     });
+  }
+
+  /// Check if the Python runner is running
+  async isRunning(_event: IpcMainInvokeEvent): Promise<boolean> {
+    if (!this.pythonRunner) {
+      return false;
+    }
+    
+    try {
+      return this.pythonRunner.isRunning();
+    } catch (error) {
+      console.error("Error checking Python runner status:", error);
+      return false;
+    }
   }
 
   /// Register a message listener to receive messages from Python

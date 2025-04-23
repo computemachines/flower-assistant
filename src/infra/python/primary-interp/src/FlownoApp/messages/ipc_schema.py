@@ -63,6 +63,11 @@ class CreateNewChatRequest(IPCMessageBase):
     payload: None = None  # Empty payload
 
 @dataclass
+class DeleteAllChatsRequest(IPCMessageBase):
+    type: Literal["delete-all-chats"]
+    payload: None = None  # Empty payload
+
+@dataclass
 class ApiConfigPayload:
     url: str | None = None
     token: str | None = None
@@ -120,6 +125,11 @@ class ChatLoadedResponse(IPCMessageBase):
     payload: ChatLoadedPayload
 
 @dataclass
+class AllChatsDeletedResponse(IPCMessageBase):
+    type: Literal["all-chats-deleted"]
+    payload: None = None  # Empty payload
+
+@dataclass
 class ApiConfigResponse(IPCMessageBase):
     type: Literal["api-config"]
     payload: ApiConfigPayload
@@ -167,6 +177,36 @@ class ErrorPayload:
 class ErrorResponse(IPCMessageBase):
     type: Literal["error"]
     payload: ErrorPayload
+
+# -----------------------------------------------------------------
+# Sentence-related Messages for TTS
+# -----------------------------------------------------------------
+
+@dataclass
+class SentenceEventPayload:
+    """Payload for sentence events sent to frontend for speech synthesis."""
+    id: str
+    chunk_ids: list[str]  # IDs of chunks that contributed to this sentence
+    text: str             # The sentence text content
+    audio: str            # Base64-encoded audio data (if pre-rendered)
+    order: int            # Sequence number for correct playback order
+
+@dataclass
+class SentenceEvent(IPCMessageBase):
+    """Event sent when a complete sentence is ready for TTS."""
+    type: Literal["sentence"]
+    payload: SentenceEventPayload
+
+@dataclass
+class SentenceDonePayload:
+    """Payload for sentence playback completion notification."""
+    id: str               # ID of the sentence that finished playing
+
+@dataclass
+class SentenceDoneRequest(IPCMessageBase):
+    """Request sent from frontend when sentence audio playback completes."""
+    type: Literal["sentence-done"]
+    payload: SentenceDonePayload
 
 # -----------------------------------------------------------------
 # Streaming Response Messages (Already present in the old codebase)
