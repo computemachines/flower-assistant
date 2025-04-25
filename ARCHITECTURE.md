@@ -360,15 +360,123 @@ interface NewPromptMessage extends IPCMessageBase {
 
 ### Development Environment
 
-*(TODO: Fill in details about required tools: Node.js, Yarn, Python, C++ compiler, CMake, etc.)*
+*   **Node.js & Yarn:** Required for the Electron app, building, and dependency management.
+*   **C++ Compiler & CMake:** Required for building the native `electron-flowno-bridge` module (CMake.js uses these).
+*   **Python (System):** A system Python installation is needed *only* to run the `build-deps.sh` script if it needs to install `patchelf` via `pip`.
+*   **patchelf:** Required by `build-deps.sh` to make the embedded Python portable.
+
+### Build Process
+
+This section outlines the steps for a clean build and explains the separate dependency handling for development vs. production.
+
+**1. Clean Workspaces:**
+
+Remove previous build artifacts and dependencies.
+
+```bash
+# Clean Flowno-Assistant
+cd /path/to/flowno-assistant
+rm -rf dist/ out/ node_modules/ python-dev-venv-embedded/
+
+# Clean electron-flowno-bridge
+cd /path/to/electron-flowno-bridge
+rm -rf build native/build/ dist/ resources/* node_modules/
+```
+
+**2. Build Embedded Python (within electron-flowno-bridge):**
+
+Builds the portable Python distribution using `build-deps.sh`. This creates the base interpreter in `electron-flowno-bridge/resources/x86_64-linux/python/`.
+
+```bash
+cd /path/to/electron-flowno-bridge
+./build-deps.sh
+```
+*   *(See script breakdown in previous step)*
+*   **Important:** This step only builds the *base* Python interpreter. Application dependencies are handled separately for dev/prod.
+
+**3. Install Node.js Dependencies (Flowno-Assistant):**
+
+Installs Electron, React, build tools, and importantly, `electron-flowno-bridge`. Yarn creates a symlink: `flowno-assistant/node_modules/electron-flowno-bridge` -> `/path/to/electron-flowno-bridge`.
+
+```bash
+cd /path/to/flowno-assistant
+yarn install
+```
+*   This step also triggers `cmake-js compile` for `electron-flowno-bridge` via its `install` script in `package.json`, building the C++ native module (`.node` file).
+
+**4. Setup Python Dependencies (Development vs. Production):**
+
+Python dependencies for `FlownoApp` (`primary-interp`) are installed differently depending on the workflow:
+
+*   **Development (`yarn start`)**  
+  1. Create venv from embedded Python:
+     ```bash
+     cd /path/to/flowno-assistant
+     ./node_modules/electron-flowno-bridge/resources/x86_64-linux/python/bin/python3.12 \
+       -m venv python-dev-venv-embedded
+     ```
+  3. Install your app & deps in editable mode:
+     ```bash
+     ./python-dev-venv-embedded/bin/pip install -e src/infra/python/primary-interp
+     ./python-dev-venv-embedded/bin/python -m spacy download en_core_web_sm
+     ```
+  *   **Running:**
+        ```bash
+        cd /path/to/flowno-assistant
+        yarn start
+        ```
+    *   **Code:** `ElectronFlownoBridge.ts` sets `python_home` to the venv path and passes an empty `extra_search_paths` array during development.
+
+*   **Production (`yarn package` or `yarn make`):**
+    *   Electron Forge copies the *clean* base embedded Python from `electron-flowno-bridge/resources` into the packaged app (`out/...`).
+    *   The `python_home` passed to the native `PythonRunner` is the path to the packaged embedded Python (`.../resources/x86_64-linux/python`).
+    *   The `postPackage` hook in `forge.config.mjs` runs *after* packaging.
+    *   It uses the *packaged app's embedded pip* to install the pre-built `FlownoApp` wheel (`primary_interp-*.whl`) and its dependencies (e.g., downloading spaCy models) directly into the packaged app's Python `site-packages`.
+    *   **Setup:** Ensure the `FlownoApp` wheel is built before packaging:
+        ```bash
+        cd /path/to/flowno-assistant/src/infra/python/primary-interp
+        # Ensure 'build' package is installed in the env used for building
+        python -m build 
+        ```
+    *   **Running:**
+        ```bash
+        cd /path/to/flowno-assistant
+        yarn package # or yarn make
+        ```
+
+**5. Building electron-flowno-bridge Native Module:**
+
+After cleaning and setting up dependencies, you need to build the native Node.js module that bridges Electron and Python:
+
+```bash
+cd /path/to/electron-flowno-bridge
+yarn install  # Install Node.js dependencies
+yarn build    # Build the native module
+```
+
+The build process runs CMake.js to compile the C++ code in `native/src/`. Common issues during this step include:
+
+- Missing dependencies (Python.h, Node headers)
+- Compilation errors after code changes
+- Architecture mismatches
+
+If errors occur, check the C++ code and ensure class member variables match between `.hpp` and `.cpp` files. The native module uses these key components:
+
+- `PythonRunner`: The main class exposed to JavaScript that initializes and communicates with Python
+- `PythonEnvironment`: Handles the embedded Python interpreter setup
+- `nodejs_callback_bridge`: The Python-side C extension module for bidirectional communication
+
+After a successful build, the native module (`.node` file) will be available in the `build/Release` directory.
+
+*(... subsequent build steps, if any, will be added here ...)*
 
 ### Building Development Version
 
-*(TODO: Add steps, e.g., `yarn install`, `yarn start`)*
+*(Consolidated into Build Process Step 4)*
 
 ### Building Production Version
 
-*(TODO: Add steps, e.g., `yarn make`)*
+*(Consolidated into Build Process Step 4)*
 
 ## Further Documentation
 

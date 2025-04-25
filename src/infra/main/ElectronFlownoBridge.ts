@@ -35,25 +35,30 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
     }
 
     console.log("ElectronFlownoBridge: Starting new Python runner");
-    
+
     const isDev = !app.isPackaged;
     const appPath = app.getAppPath();
+
+    // Always load the embedded interpreter so libpython3.12.so lives under `python_home/lib`
     const resourcesPath = isDev
       ? path.join(appPath, "node_modules/electron-flowno-bridge/resources")
       : path.join(appPath, "../resources");
+    const pythonHome = path.join(resourcesPath, "x86_64-linux/python");
+    console.log(`${isDev ? "[Dev Mode]" : "[Prod Mode]"} python_home = ${pythonHome}`);
 
-    const customPackagesPath = path.join(appPath, "python-dev-packages");
-    
-    const extraPaths = isDev
-      ? [
-          path.join(appPath, "src/infra/python/primary-interp/src"),
-          customPackagesPath  // Add custom packages directory
-        ]
-      : [];
+    // In dev, install your editable primary-interp + deps into python-dev-venv-embedded.
+    // We'll add its site‑packages to Python’s module_search_paths.
+    const extraPaths: string[] = [];
+    if (isDev) {
+      const venvSite = path.join(appPath, "python-dev-venv-embedded/lib/python3.12/site-packages");
+      console.log(`[Dev Mode] adding venv site-packages to module_search_paths: ${venvSite}`);
+      extraPaths.push(path.join(appPath, "src/infra/python/primary-interp/src"));
+      extraPaths.push(venvSite);
+    }
 
     try {
       this.pythonRunner = new PythonRunner({
-        resource_path: resourcesPath,
+        python_home: pythonHome, // Use the calculated path
         module: "FlownoApp",
         module_attribute: "app",
         extra_search_paths: extraPaths,
@@ -62,7 +67,7 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
           FLOWNO_NATIVE_LOG_LEVEL: "WARNING", 
           NODEJS_BRIDGE_VERBOSE: "0",
           NODEJS_BRIDGE_DEBUG: "0", 
-          PYTHONUNBUFFERED: "0",
+          PYTHONUNBUFFERED: "1", // Set to 1 for unbuffered output
         },
       });
       this.pythonRunner.start();
