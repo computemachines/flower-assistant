@@ -53,6 +53,7 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
       const venvSite = path.join(appPath, "python-dev-venv-embedded/lib/python3.12/site-packages");
       console.log(`[Dev Mode] adding venv site-packages to module_search_paths: ${venvSite}`);
       extraPaths.push(path.join(appPath, "src/infra/python/primary-interp/src"));
+      extraPaths.push(path.join(appPath, "src/infra/native/electron-flowno-bridge/python"));
       extraPaths.push(venvSite);
     }
 

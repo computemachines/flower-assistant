@@ -91,9 +91,13 @@ typings/
 # Electron-Forge
 out/
 
-/resources/
-/native/build/
-/dist/
+native/build/
+resources/
+third_party/
+build/
+dist/
+node_modules/
+compile_commands.json
 
 .nvim
 .vscode/settings.json

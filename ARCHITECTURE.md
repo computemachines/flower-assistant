@@ -8,31 +8,45 @@
 │   ├── main-entry.ts       # Electron main process entry
 │   ├── renderer-entry.ts   # Renderer process entry
 │   ├── renderer-preload.ts # Preload script for renderer
-│   ├── components/         # Shared React components (UI primitives)
+│   ├── components/         # Shared React components
 │   ├── contexts/           # React context providers
-│   ├── core/               # Core utilities/types (if any)
-│   ├── features/           # Feature-sliced modules (e.g., chat)
+│   ├── core/               # Core utilities/types
+│   ├── features/           # Feature-sliced modules
 │   │   └── chat/
 │   │       ├── main/       # Main-process logic for chat feature
-│   │       └── renderer/   # Renderer components/logic for chat
-│   ├── infra/              # Platform-specific code & cross-cutting concerns
-│   │   ├── IPCChannels.ts  # Definitions for IPC communication
-│   │   ├── main/           # Electron main process services & setup
-│   │   ├── renderer/       # Renderer-side utilities (e.g., contexts)
-│   │   └── python/         # Embedded Python subproject (primary-interp)
-│   │       └── primary-interp/
-│   │           ├── pyproject.toml
-│   │           ├── README.md
-│   │           └── src/FlownoApp/ # Python application source
-│   ├── styles/             # Global CSS
-│   └── index.html          # HTML template for renderer
-├── forge.config.mjs      # Electron Forge configuration
-├── webpack.*.config.mjs  # Webpack configurations
-├── tailwind.config.js    # Tailwind CSS configuration
-├── tsconfig.json         # TypeScript configuration
-└── package.json          # Node.js project manifest
+│   │       └── renderer/   # Renderer components for chat
+│   ├── infra/              # Infrastructure code
+│   │   ├── IPCChannels.ts  # IPC channel constants
+│   │   ├── ipc/            # Message schema definitions
+│   │   ├── main/           # Main process services
+│   │   ├── native/
+│   │   │   └── electron-flowno-bridge/  # Native Node.js module (moved from external repo)
+│   │   │       ├── native/              # C++ source code
+│   │   │       ├── python/              # Python callback bridge
+│   │   │       ├── resources/           # Embedded Python interpreter
+│   │   │       └── build-deps.sh        # Script to build embedded Python
+│   │   ├── python/
+│   │   │   └── primary-interp/          # Embedded Python application
+│   │   │       ├── src/FlownoApp/       # Python source code
+│   │   │       │   ├── app.py           # Main application entry
+│   │   │       │   ├── ipc/             # IPC handlers and registry
+│   │   │       │   ├── messages/        # Message schemas and types
+│   │   │       │   ├── nodes/           # Flowno dataflow nodes
+│   │   │       │   └── utils/           # Utility functions
+│   │   │       └── tests/               # Python tests
+│   │   └── renderer/                    # Renderer-side services
+│   └── styles/                          # Global CSS
+├── images/                              # Application assets
+├── python-dev-venv-embedded/            # Development virtual environment
+├── forge.config.mjs                     # Electron Forge config
+├── webpack.*.config.mjs                 # Webpack configurations
+├── tsconfig.json                        # TypeScript config
+├── tailwind.config.js                   # Tailwind CSS config
+├── package.json                         # Node.js dependencies
+└── ARCHITECTURE.md                      # This document
 ```
-*(See `src/infra/python/primary-interp/README.md` for the Python subproject layout)*
+
+The application also depends on the external [`flowno`](https://github.com/computemachines/flowno) repository, a Python dataflow framework used by the embedded Python application.
 
 ## Overview
 
@@ -354,15 +368,19 @@ interface NewPromptMessage extends IPCMessageBase {
 
 ### Current Runtime Dependencies
 
--   Requires an OpenAI-compatible completion API endpoint.
--   Requires an OpenAI-compatible audio API endpoint (for TTS).
+-   OpenAI-compatible completion API endpoint.
+-   OpenAI-compatible audio API endpoint (for TTS).
+-   Installed Python packages (embedded) must include:
+    -   flowno (Python dataflow framework)
+    -   spaCy (for sentence segmentation)
+    -   en_core_web_sm spaCy model (English)
 -   Example compatible backends: `llama.cpp` server, `Kokoro-FastAPI`.
 
 ### Development Environment
 
 *   **Node.js & Yarn:** Required for the Electron app, building, and dependency management.
-*   **C++ Compiler & CMake:** Required for building the native `electron-flowno-bridge` module (CMake.js uses these).
-*   **Python (System):** A system Python installation is needed *only* to run the `build-deps.sh` script if it needs to install `patchelf` via `pip`.
+*   **C++ Compiler & CMake:** Required for building the native `electron-flowno-bridge` module.
+*   **Python (System):** Needed only for `build-deps.sh` (installing `patchelf`).
 *   **patchelf:** Required by `build-deps.sh` to make the embedded Python portable.
 
 ### Build Process

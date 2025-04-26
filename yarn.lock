@@ -2148,7 +2148,7 @@ electron-devtools-installer@^4.0.0:
   dependencies:
     unzip-crx-3 "^0.2.0"
 
-"electron-flowno-bridge@link:../electron-flowno-bridge":
+"electron-flowno-bridge@link:src/infra/native/electron-flowno-bridge":
   version "0.0.0"
   uid ""
 

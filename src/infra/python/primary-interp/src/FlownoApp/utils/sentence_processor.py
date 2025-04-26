@@ -14,7 +14,7 @@ from .debug_utils import debug_args_retval
 logger = logging.getLogger(__name__)
 
 # Load spaCy model once when the module is loaded
-nlp = spacy.load("en_core_web_md")
+nlp = spacy.load("en_core_web_sm")
 nlp.add_pipe("sentencizer")
 
 @dataclass
