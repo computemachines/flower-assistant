@@ -141,18 +141,6 @@ export class ElectronFlownoBridge implements IElectronFlownoBridge {
         console.log("Registering message listener with Python");
         try {
           this.pythonRunner.registerMessageListener((message) => {
-            // Only log important messages (final chunks or non-chunk messages)
-            // Skip logging for intermediate chunks to reduce noise
-            const isFinalChunk = typeof message === 'object' && 
-                                message.type === 'chunk' && 
-                                message.final === true;
-            const isNonChunkMessage = typeof message === 'object' && 
-                                     message.type !== 'chunk';
-                                     
-            console.log("Received message from Python:", 
-                        typeof message === 'object' ? 
-                        JSON.stringify(message) : message);
-            
             // Forward all messages to the renderer process
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send(IPC_ElectronFlownoBridge_messageForRenderer, message);
